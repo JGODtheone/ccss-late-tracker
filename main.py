@@ -8,21 +8,26 @@ from difflib import get_close_matches
 st.set_page_config(page_title="CCSS School Portal", page_icon="🏫")
 
 # --- DATABASE LOADERS ---
+@st.cache_data
 def load_students():
-    students = {}
+    students_dict = {}
     try:
-        with open("student.txt", "r") as f:
-            for line in f:
-                if "," in line:
-                    name, room = line.strip().split(",")
-                    students[name.lower().strip()] = room.strip()
-    except FileNotFoundError:
-        st.error("Error: student.txt not found!")
-    return students
+        if os.path.exists("student.txt"):
+            with open("student.txt", "r") as f:
+                for line in f:
+                    if "," in line:
+                        name, room = line.strip().split(",")
+                        students_dict[name.lower().strip()] = room.strip()
+    except Exception as e:
+        st.error(f"Error loading student.txt: {e}")
+    return students_dict
 
 def load_detention_data():
     if os.path.exists("detention.txt"):
-        return pd.read_csv("detention.txt", names=["Student", "Room", "Time", "Date"])
+        try:
+            return pd.read_csv("detention.txt", names=["Student", "Room", "Time", "Date"])
+        except:
+            return pd.DataFrame(columns=["Student", "Room", "Time", "Date"])
     return pd.DataFrame(columns=["Student", "Room", "Time", "Date"])
 
 # Initialize data
@@ -40,7 +45,7 @@ if mode == "Student Check-in":
     val = st.text_input("Scan/Enter Your Name:").strip().lower()
 
     if val:
-        # Match student
+        # Match student (Exact then Fuzzy)
         matched_key = val if val in students else None
         if not matched_key:
             matches = get_close_matches(val, students.keys(), n=1, cutoff=0.6)
@@ -53,7 +58,7 @@ if mode == "Student Check-in":
             # 1. LATE CHECK & STRIKE SYSTEM
             is_late = school_time.hour > 8 or (school_time.hour == 8 and school_time.minute > 15)
             
-            # Count historical lates
+            # Count historical lates for this student
             history_df = load_detention_data()
             previous_lates = len(history_df[history_df['Student'] == display_name])
             
@@ -65,48 +70,56 @@ if mode == "Student Check-in":
                     st.header(f"🚨 STRIKE {current_strike}!")
                     st.subheader("DETENTION EARNED - REPORT TO OFFICE")
                 else:
-                    st.warning(f"Strike {current_strike} of 3. Streak Reset to 0.")
+                    st.warning(f"Strike {current_strike} of 3. Please be earlier tomorrow!")
 
-                # Save record
+                # Save record to detention.txt
                 with open("detention.txt", "a") as d_file:
                     d_file.write(f"{display_name},{homeroom},{school_time.strftime('%I:%M %p')},{today_str}\n")
             
             else:
                 st.success(f"### Result: ON TIME")
                 st.balloons()
-                st.write(f"Points Gained! Keep the streak alive, {display_name}!")
-                
-            # Note: In a real cloud app, you'd save "Points" to a CSV here. 
-            # For now, it shows their status.
+                st.write(f"Good job {display_name}! You are on time.")
         else:
-            st.info("Name not found. Check spelling!")
+            st.info("Name not found. Check spelling or see a teacher.")
 
 elif mode == "Teacher Attendance":
     st.title("👩‍🏫 Teacher Admin Panel")
     
-    # Simple password protection
     pw = st.text_input("Enter Admin Password", type="password")
     if pw == "ccss2026":
         st.divider()
         
-        # 2. ATTENDANCE SUMMARY
-        df = load_detention_data()
+        # Load data
+        df_all_history = load_detention_data()
         
-        col1, col2 = st.columns(2)
-        col1.metric("Total Lates Today", len(df[df['Date'] == today_str]))
+        # 1. CALCULATE HEADCOUNT (Numbers only, no names)
+        total_enrolled = len(students)
+        # Note: In this simple version, we assume students only show up in detention.txt if they checked in
+        # To be more accurate, you'd need a separate 'attendance.txt'
+        checked_in_today = len(df_all_history[df_all_history['Date'] == today_str]['Student'].unique())
+        missing_count = total_enrolled - checked_in_today
+
+        # 2. DISPLAY METRICS
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Enrolled", total_enrolled)
+        c2.metric("Checked In", checked_in_today)
+        c3.metric("Missing Students", missing_count)
+
+        st.divider()
         
-        st.subheader("Current Detention List")
-        st.dataframe(df, use_container_width=True)
+        # 3. SHOW ONLY LATE RECORDS FOR TODAY
+        st.subheader("Today's Late List")
+        today_lates = df_all_history[df_all_history['Date'] == today_str]
         
-        # 3. ABSENTEE CHECK
-        st.subheader("Who is missing?")
-        checked_in_names = df[df['Date'] == today_str]['Student'].str.lower().tolist()
-        absent = [name.title() for name in students.keys() if name not in checked_in_names]
-        
-        if absent:
-            st.warning(f"{len(absent)} students have not checked in yet.")
-            st.write(", ".join(absent))
+        if not today_lates.empty:
+            st.dataframe(today_lates[["Student", "Room", "Time"]], use_container_width=True)
             
-        # Download
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Full Report", data=csv, file_name=f"school_report_{today_str}.csv")
+            # Download
+            csv = today_lates.to_csv(index=False).encode('utf-8')
+            st.download_button("Download Today's Report", data=csv, file_name=f"late_list_{today_str}.csv")
+        else:
+            st.info("No late students recorded so far today.")
+            
+    elif pw != "":
+        st.error("Incorrect Password")
