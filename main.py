@@ -8,10 +8,10 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_extras.stylable_container import stylable_container 
 
 # --- APP CONFIG ---
-# This line sets your school logo as the icon in the browser tab
+# This looks for the image file in your folder to replace the default logo
 st.set_page_config(
     page_title="CCSS School Portal", 
-    page_icon="image_bea7a3.jpg", 
+    page_icon="image_bf1f6a.png", 
     layout="wide"
 )
 
@@ -130,7 +130,6 @@ elif mode == "Student Check-in":
     else:
         st.success(f"Current Status: ON TIME ({school_time.strftime('%I:%M %p')})")
 
-    # FIXED LINE: Removed all mention of Scan ID/Card
     val = st.text_input("Enter Name:", placeholder="Click here...").strip().lower()
 
     if val:
