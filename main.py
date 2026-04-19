@@ -70,7 +70,7 @@ over_theme = {
 mode = hc.nav_bar(
     menu_definition=menu_data,
     override_theme=over_theme,
-    home_name=None, # Set to None to use 'Home' from menu_data
+    home_name=None, 
     sticky_nav=True,
     sticky_mode='pinned',
 )
@@ -86,7 +86,7 @@ if mode == 'Home':
     target_time = school_time.replace(hour=8, minute=15, second=0, microsecond=0)
     if school_time < target_time:
         time_left = target_time - school_time
-        total_seconds = 8 * 3600 + 15 * 60 # Seconds since midnight to 8:15
+        total_seconds = 8 * 3600 + 15 * 60 
         current_seconds = school_time.hour * 3600 + school_time.minute * 60
         progress = min(current_seconds / total_seconds, 1.0)
         
@@ -125,7 +125,8 @@ elif mode == "Student Check-in":
     else:
         st.success(f"Current Status: ON TIME ({school_time.strftime('%I:%M %p')})")
 
-    val = st.text_input("Scan ID or Enter Name:", placeholder="Click here and scan card...").strip().lower()
+    # FIXED LINE: Removed Scan ID and Scan Card
+    val = st.text_input("Enter Name:", placeholder="Click here...").strip().lower()
 
     if val:
         matched_key = val if val in students else None
@@ -137,7 +138,6 @@ elif mode == "Student Check-in":
             homeroom = students[matched_key]
             display_name = matched_key.title()
             
-            # Filter history for current student
             student_history = history_df[history_df['Student'] == display_name]
             previous_lates = len(student_history)
             
@@ -173,7 +173,6 @@ elif mode == "Teacher Attendance":
             
         view_date = st.selectbox("Select Date to View:", unique_dates)
         
-        # Dashboard Metrics
         c1, c2, c3 = st.columns(3)
         date_lates = history_df[history_df['Date'] == view_date]
         
@@ -184,7 +183,6 @@ elif mode == "Teacher Attendance":
 
         st.divider()
         
-        # Display Table and Export Button
         col_a, col_b = st.columns([4, 1])
         with col_a:
             st.subheader(f"Records for {view_date}")
