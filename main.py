@@ -95,15 +95,16 @@ if mode == 'Home':
             st.write("Ensure you check in before **8:15 AM** to avoid receiving a strike.")
             st.write("**3 Strikes = Detention**")
 
-    with col2:
+  with col2:
         with stylable_container(
             key="sys_status",
             css_styles="{ border: 1px solid #D32F2F; border-radius: 10px; padding: 20px; text-align: center; background-color: #FFF5F5; }"
         ):
-            st.markdown("### ⏱️ Terminal Clock")
-            st.subheader(school_time.strftime('%I:%M %p'))
-            st.write(f"Date: {today_str}")
-
+            # Force text to be Dark Gray (#333333) and Red (#D32F2F)
+            st.markdown("<h3 style='color: #333333; margin-bottom: 0;'>⏱️ Terminal Clock</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='color: #D32F2F; margin-top: 0;'>{school_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color: #555555;'>Date: {today_str}</p>", unsafe_allow_html=True)
+            
     with col3:
         with stylable_container(
             key="admin_info",
