@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from difflib import get_close_matches
 from streamlit_extras.metric_cards import style_metric_cards
+# Added this import for the home page cards
+from streamlit_extras.stylable_container import stylable_container 
 
 # --- APP CONFIG ---
 st.set_page_config(page_title="CCSS School Portal", page_icon="🏫", layout="wide")
@@ -18,7 +20,6 @@ def local_css(file_name):
 local_css("style.css")
 
 # --- HYDRALIT LOADER & DATA LOADING ---
-# This wrapper creates the professional loading animation
 with hc.HyLoader('Accessing CCSS Secure Database...', loader_name='standard'):
     @st.cache_data
     def load_students():
@@ -46,11 +47,9 @@ with hc.HyLoader('Accessing CCSS Secure Database...', loader_name='standard'):
                 return pd.DataFrame(columns=["Student", "Room", "Time", "Date"])
         return pd.DataFrame(columns=["Student", "Room", "Time", "Date"])
 
-    # Initialize data inside the loader
     students = load_students()
     history_df = load_detention_data()
 
-# Timing Logic
 school_time = datetime.now() - timedelta(hours=4)
 today_str = school_time.strftime("%Y-%m-%d")
 
@@ -60,7 +59,6 @@ menu_data = [
     {'icon': "bi bi-shield-lock", 'label': "Teacher Attendance"},
 ]
 
-# Academic Red & White Theme
 over_theme = {
     'txc_inactive': '#FFFFFF', 
     'menu_background': '#D32F2F', 
@@ -78,8 +76,45 @@ mode = hc.nav_bar(
 
 # --- PAGE CONTENT ---
 if mode == 'Home':
-    st.markdown("<h1 style='text-align: center;'>🏫 CCSS DIGITAL PORTAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555555;'>Welcome to the Central Christian School System lateness tracking terminal.</p>", unsafe_allow_html=True)
+    # Professional Header
+    st.markdown("<h1 style='text-align: center; color: #D32F2F; margin-bottom: 0;'>CASTRIES COMPREHENSIVE</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #555555; margin-top: 0;'>Secondary School Portal</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-style: italic;'>\"A Place of Excellence and Opportunity\"</p>", unsafe_allow_html=True)
+    
+    st.divider()
+
+    # Layout for a fuller home page
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        with stylable_container(
+            key="student_info",
+            css_styles="{ border: 1px solid #ddd; border-radius: 10px; padding: 20px; text-align: center; }"
+        ):
+            st.markdown("### 👤 Students")
+            st.write("Ensure you check in before **8:15 AM** to avoid receiving a strike.")
+            st.write("**3 Strikes = Detention**")
+
+    with col2:
+        with stylable_container(
+            key="sys_status",
+            css_styles="{ border: 1px solid #D32F2F; border-radius: 10px; padding: 20px; text-align: center; background-color: #FFF5F5; }"
+        ):
+            st.markdown("### ⏱️ Terminal Clock")
+            st.subheader(school_time.strftime('%I:%M %p'))
+            st.write(f"Date: {today_str}")
+
+    with col3:
+        with stylable_container(
+            key="admin_info",
+            css_styles="{ border: 1px solid #ddd; border-radius: 10px; padding: 20px; text-align: center; }"
+        ):
+            st.markdown("### 👩‍🏫 Administration")
+            st.write("Teachers can monitor attendance and download daily late reports.")
+            st.caption("Secure Login Required")
+
+    st.divider()
+    st.markdown("<p style='text-align: center; color: gray;'>© 2026 Castries Comprehensive Secondary School | Digital Attendance Terminal</p>", unsafe_allow_html=True)
 
 elif mode == "Student Check-in":
     st.markdown("<h1>--- STUDENT CHECK-IN ---</h1>", unsafe_allow_html=True)
@@ -111,15 +146,15 @@ elif mode == "Student Check-in":
                         </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.warning(f"Strike {current_strike} of 3 recorded. Please be punctual tomorrow.")
+                    st.warning(f"Strike {current_strike} of 3 recorded for {display_name}. Please be punctual tomorrow.")
 
                 with open("detention.txt", "a") as d_file:
                     d_file.write(f"{display_name},{homeroom},{school_time.strftime('%I:%M %p')},{today_str}\n")
             else:
-                st.success(f"Check-in Successful: {display_name}")
+                st.success(f"Check-in Successful: {display_name} (On Time)")
                 st.balloons()
         else:
-            st.error("Credential not recognized.")
+            st.error("Credential not recognized. Please see an administrator.")
 
 elif mode == "Teacher Attendance":
     st.markdown("<h1>👩‍🏫 ADMINISTRATION PANEL</h1>", unsafe_allow_html=True)
@@ -133,9 +168,9 @@ elif mode == "Teacher Attendance":
         
         # Metrics
         c1, c2, c3 = st.columns(3)
-        c1.metric("Enrolled", len(students))
-        c2.metric("Late Records", len(history_df[history_df['Date'] == view_date]))
-        c3.metric("Status", "System Online")
+        c1.metric("Enrolled Students", len(students))
+        c2.metric("Late Records Today", len(history_df[history_df['Date'] == view_date]))
+        c3.metric("System Status", "Online")
         style_metric_cards(background_color="#FFFFFF", border_left_color="#D32F2F")
 
         st.divider()
