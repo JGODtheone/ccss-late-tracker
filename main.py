@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 from difflib import get_close_matches
 from streamlit_extras.metric_cards import style_metric_cards
-# Added this import for the home page cards
 from streamlit_extras.stylable_container import stylable_container 
 
 # --- APP CONFIG ---
@@ -76,14 +75,12 @@ mode = hc.nav_bar(
 
 # --- PAGE CONTENT ---
 if mode == 'Home':
-    # Professional Header
     st.markdown("<h1 style='text-align: center; color: #D32F2F; margin-bottom: 0;'>CASTRIES COMPREHENSIVE</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #555555; margin-top: 0;'>Secondary School Portal</h3>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-style: italic;'>\"A Place of Excellence and Opportunity\"</p>", unsafe_allow_html=True)
     
     st.divider()
 
-    # Layout for a fuller home page
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -95,12 +92,11 @@ if mode == 'Home':
             st.write("Ensure you check in before **8:15 AM** to avoid receiving a strike.")
             st.write("**3 Strikes = Detention**")
 
-  with col2:
+    with col2:
         with stylable_container(
             key="sys_status",
             css_styles="{ border: 1px solid #D32F2F; border-radius: 10px; padding: 20px; text-align: center; background-color: #FFF5F5; }"
         ):
-            # Force text to be Dark Gray (#333333) and Red (#D32F2F)
             st.markdown("<h3 style='color: #333333; margin-bottom: 0;'>⏱️ Terminal Clock</h3>", unsafe_allow_html=True)
             st.markdown(f"<h2 style='color: #D32F2F; margin-top: 0;'>{school_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
             st.markdown(f"<p style='color: #555555;'>Date: {today_str}</p>", unsafe_allow_html=True)
@@ -167,7 +163,6 @@ elif mode == "Teacher Attendance":
             
         view_date = st.selectbox("Select Date to View:", unique_dates)
         
-        # Metrics
         c1, c2, c3 = st.columns(3)
         c1.metric("Enrolled Students", len(students))
         c2.metric("Late Records Today", len(history_df[history_df['Date'] == view_date]))
