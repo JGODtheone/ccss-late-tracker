@@ -125,7 +125,7 @@ elif mode == "Student Check-in":
     else:
         st.success(f"Current Status: ON TIME ({school_time.strftime('%I:%M %p')})")
 
-    val = st.text_input("Scan ID or Enter Name:").strip().lower()
+    val = st.text_input("Enter Name:").strip().lower()
 
     if val:
         matched_key = val if val in students else None
