@@ -8,14 +8,14 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_extras.stylable_container import stylable_container 
 
 # --- APP CONFIG ---
+# Removed the custom image file to revert to the default Streamlit logo
 st.set_page_config(
     page_title="CCSS School Portal", 
-    page_icon="🏫", # Using emoji to ensure it works immediately
     layout="wide"
 )
 
 # --- CUSTOM CSS FOR METRICS & TEXT ---
-# This removes the "white squares" and makes sure text is visible in dark mode
+# This ensures the administration metrics are visible against the dark background
 st.markdown("""
     <style>
     [data-testid="stMetricValue"] {
@@ -41,7 +41,7 @@ def local_css(file_name):
 
 local_css("style.css")
 
-# --- HYDRALIT LOADER & DATA LOADING ---
+# --- DATA LOADING ---
 with hc.HyLoader('Accessing CCSS Secure Database...', loader_name='standard'):
     @st.cache_data
     def load_students():
@@ -53,8 +53,8 @@ with hc.HyLoader('Accessing CCSS Secure Database...', loader_name='standard'):
                         if "," in line:
                             name, room = line.strip().split(",")
                             students_dict[name.lower().strip()] = room.strip()
-        except Exception as e:
-            st.error(f"Error loading student.txt: {e}")
+        except Exception:
+            pass
         return students_dict
 
     def load_detention_data():
@@ -104,39 +104,24 @@ if mode == 'Home':
     st.markdown("<h3 style='text-align: center; color: #555555; margin-top: 0;'>Secondary School Portal</h3>", unsafe_allow_html=True)
     st.divider()
 
-    # Late Bell Progress
-    target_time = school_time.replace(hour=8, minute=15, second=0, microsecond=0)
-    if school_time < target_time:
-        time_left = target_time - school_time
-        st.write(f"⏳ **Time until Late Bell:** {str(time_left).split('.')[0]} remaining")
-        st.progress(min((school_time.hour * 3600 + school_time.minute * 60) / (8 * 3600 + 15 * 60), 1.0))
-    else:
-        st.error("🚨 Late Bell has rung. All arrivals are now recorded as strikes.")
-
     col1, col2, col3 = st.columns(3)
-    with col1:
-        with stylable_container(key="s_info", css_styles="{border: 1px solid #ddd; border-radius: 10px; padding: 20px; text-align: center;}"):
-            st.markdown("### 👤 Students")
-            st.write("Ensure you check in before **8:15 AM**.")
     with col2:
         with stylable_container(key="sys_status", css_styles="{border: 1px solid #D32F2F; border-radius: 10px; padding: 20px; text-align: center; background-color: #FFF5F5;}"):
             st.markdown(f"<h2 style='color: #D32F2F; margin-top: 0;'>{school_time.strftime('%I:%M %p')}</h2>", unsafe_allow_html=True)
             st.write(school_time.strftime('%A, %B %d'))
-    with col3:
-        with stylable_container(key="a_info", css_styles="{border: 1px solid #ddd; border-radius: 10px; padding: 20px; text-align: center;}"):
-            st.markdown("### 👩‍🏫 Staff")
-            st.write("Manage daily reports securely.")
 
 elif mode == "Student Check-in":
     st.markdown("<h2 style='text-align: center;'>STUDENT CHECK-IN</h2>", unsafe_allow_html=True)
     is_late = school_time.hour > 8 or (school_time.hour == 8 and school_time.minute > 15)
     
+    # Red status box for late arrivals
     if is_late:
         st.error(f"Current Status: LATE ({school_time.strftime('%I:%M %p')})")
     else:
         st.success(f"Current Status: ON TIME ({school_time.strftime('%I:%M %p')})")
 
-    val = st.text_input("Scan ID or Enter Name:", placeholder="Click here and scan card...").strip().lower()
+    # Simplified input as requested
+    val = st.text_input("Enter Name:", placeholder="Click here...").strip().lower()
 
     if val:
         matches = get_close_matches(val, students.keys(), n=1, cutoff=0.6)
@@ -164,7 +149,7 @@ elif mode == "Teacher Attendance":
         if today_str not in unique_dates: unique_dates.insert(0, today_str)
         view_date = st.selectbox("Select Date to View:", unique_dates)
         
-        # --- FIXED METRICS CARDS ---
+        # Administration metrics
         date_lates = history_df[history_df['Date'] == view_date]
         c1, c2, c3 = st.columns(3)
         c1.metric("Students Logged Late", len(date_lates))
@@ -174,13 +159,7 @@ elif mode == "Teacher Attendance":
         style_metric_cards(background_color="#121212", border_left_color="#D32F2F", border_color="#1E1E1E")
 
         st.divider()
-        col_a, col_b = st.columns([4, 1])
-        with col_a:
-            st.subheader(f"Records for {view_date}")
-        with col_b:
-            csv = date_lates.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Export CSV", data=csv, file_name=f"lates_{view_date}.csv", mime='text/csv')
-            
+        st.subheader(f"Records for {view_date}")
         st.dataframe(date_lates, use_container_width=True)
     elif pw != "":
         st.error("Incorrect Password.")
