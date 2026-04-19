@@ -1,4 +1,5 @@
 streamlit
 pandas
 streamlit-extras
-hydralit
+hydralit-components
+numphy<2.0.0
